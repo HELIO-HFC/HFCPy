@@ -21,7 +21,7 @@ Version 0.3.0
 * Cache the feature data, and fix the colors by tracking
 * Add unit tests (pytest), ruff, mypy and pre-commit configurations
 * Add GitLab CI and GitHub Actions pipelines, with test coverage (pytest-cov)
-* Add CI status, coverage and Python versions badges to the README
+* Add CI status, coverage, Python versions and licence badges to the README
 * Distribute under the EUPL-1.2 licence
 
 Version 0.2

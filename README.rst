@@ -12,6 +12,10 @@ HFCPy
 .. image:: https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue
    :alt: Python versions
 
+.. image:: https://img.shields.io/github/license/HELIO-HFC/HFCPy
+   :target: https://github.com/HELIO-HFC/HFCPy/blob/develop/LICENSE
+   :alt: License
+
 ``hfcpy`` is a Python package for the users of the HELIO Heliophysics Feature
 Catalogue (HFC). It provides:
 
@@ -288,8 +292,8 @@ The development is done on the ``develop`` branch; the ``master`` branch only
 receives the tagged releases of the package.
 
 The badges at the top of this file give the status of the last GitHub Actions
-run on the ``develop`` branch, the coverage of the tests on this branch, and the
-tested Python versions. The coverage badge is updated by the CI runs on
+run on the ``develop`` branch, the coverage of the tests on this branch, the
+tested Python versions and the licence. The coverage badge is updated by the CI runs on
 ``develop``, which push a ``coverage.json`` file to the ``badges`` branch. The
 Python versions of the badge must be the ones of the ``pyproject.toml``
 classifiers and of the CI matrices (this is checked by the tests). On GitLab,
