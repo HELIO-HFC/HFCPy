@@ -22,6 +22,7 @@ from hfcpy.api import (
     quicklook_url,
 )
 from hfcpy.api import quicklook as quicklook_module
+from hfcpy.api.client import BUNDLED_SCHEMAS, bundled_schemas
 
 DATE = datetime(2012, 6, 1, 12, 0, 0)
 DATE_ROW = [{"DATE_OBS": "2012-06-02T07:01:45"}]
@@ -271,3 +272,11 @@ def test_client_quicklook(hqi: HQIClient, tmp_path: Path) -> None:
     Image.new("L", (4, 3)).save(tmp_path / "image.png")
     assert hqi.quicklook({"QCLK_URL": str(tmp_path), "QCLK_FNAME": "image.png"}) is not None
     assert hqi.quicklook({"DATE_OBS": "2012-06-01T12:00:00"}) is None
+
+
+def test_bundled_schemas() -> None:
+    store = bundled_schemas()
+    for location in BUNDLED_SCHEMAS:
+        content = store.open(f"http://{location}")
+        assert content is not None
+        assert b"<xs:schema" in content

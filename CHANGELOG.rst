@@ -13,6 +13,8 @@ Version 0.3.0
   ``previous``, ``next``, ``features``, ``quicklook``), conditions built from
   mappings, typed values, access to the VOTable document and to dictionaries,
   pandas/astropy conversions, and explicit errors (``HQIError``)
+* Bundle the XML schema imported by the HQI WSDL, which can not be downloaded
+  on Linux (incomplete certificate chain of www.helio-vo.eu)
 * Adapt the SQL queries to the PostgreSQL backend of the HFC
 * Fix the compatibility with recent numpy, scipy and matplotlib versions
 * Fix the data set given on the command line being ignored

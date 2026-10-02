@@ -18,10 +18,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping, Sequence
+from importlib.resources import files
 from typing import Any
 
 import suds
 import suds.client
+import suds.store
 import suds.transport
 import truststore
 from PIL import Image
@@ -58,6 +60,22 @@ logger = logging.getLogger(__name__)
 HQI_WSDL = "http://voparis-helio.obspm.fr/hfc-hqi/HelioTavernaService?wsdl"
 #: WSDL of the development version of the HQI of the HFC
 HQI_DEV_WSDL = "http://voparis-helio.obspm.fr/hfc-hqi-dev/HelioTavernaService?wsdl"
+
+#: XML schemas imported by the HQI WSDL, bundled with the package (location -> file
+#: in hfcpy/api/schemas). They are not downloaded, which avoids depending on the
+#: availability of their server, and on its certificate chain (www.helio-vo.eu sends
+#: an incomplete chain, which can not be verified by OpenSSL).
+BUNDLED_SCHEMAS = {
+    "www.helio-vo.eu/services/xml/instruments.xsd": "instruments.xsd",
+}
+
+
+def bundled_schemas() -> suds.store.DocumentStore:
+    """Return a suds document store providing the bundled XML schemas."""
+    schemas = files("hfcpy.api") / "schemas"
+    return suds.store.DocumentStore(
+        {location: (schemas / name).read_bytes() for location, name in BUNDLED_SCHEMAS.items()}
+    )
 
 
 class HQIError(Exception):
@@ -125,10 +143,15 @@ class HQIClient:
     def soap_client(self) -> Any:
         """The ``suds`` client of the web service (created on first use)."""
         if self._soap_client is None:
-            # The WSDL imports XML schemas over HTTPS: use the OS certificate store.
+            # Use the OS certificate store for the HTTPS requests.
             truststore.inject_into_ssl()
             try:
-                self._soap_client = suds.client.Client(self.wsdl, retxml=True, timeout=self.timeout)
+                self._soap_client = suds.client.Client(
+                    self.wsdl,
+                    retxml=True,
+                    timeout=self.timeout,
+                    documentStore=bundled_schemas(),
+                )
             except (suds.transport.TransportError, OSError) as err:
                 raise HQIConnectionError(f"Can not reach {self.wsdl}: {err}") from err
         return self._soap_client
