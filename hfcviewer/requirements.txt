@@ -1,5 +1,0 @@
-pillow
-suds-py3
-matplotlib==2.1
-scipy
-numpy

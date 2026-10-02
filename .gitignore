@@ -2,3 +2,17 @@
 ~*
 tmp
 .idea/*
+
+# Python
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.venv*/
+.uv-cache/
+.pre-commit-cache/
+report-*.xml

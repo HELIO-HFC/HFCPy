@@ -1,0 +1,93 @@
+# GitLab CI pipeline of hfcpy.
+#
+# Pipelines only run when they are triggered:
+#   - from the GitLab web interface (Build > Pipelines > Run pipeline),
+#   - through the API (POST /projects/:id/pipeline or a trigger token),
+#   - when a tag is pushed.
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
+    - if: $CI_PIPELINE_SOURCE == "trigger"
+    - if: $CI_COMMIT_TAG
+    - when: never
+
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  UV_LINK_MODE: copy
+  UV_CACHE_DIR: "$CI_PROJECT_DIR/.uv-cache"
+  PRE_COMMIT_HOME: "$CI_PROJECT_DIR/.pre-commit-cache"
+  # Use the Python of the Docker image, not a uv-managed one
+  UV_PYTHON_DOWNLOADS: never
+
+default:
+  image: ghcr.io/astral-sh/uv:python3.14-bookworm
+  interruptible: true
+  cache:
+    - key:
+        files: [uv.lock]
+        prefix: uv-$CI_JOB_NAME
+      paths: [.uv-cache]
+  after_script:
+    - uv cache prune --ci
+
+pre-commit:
+  stage: lint
+  variables:
+    # the uv-lock hook would try to update the lock file
+    SKIP: uv-lock
+  cache:
+    - key:
+        files: [uv.lock]
+        prefix: uv-$CI_JOB_NAME
+      paths: [.uv-cache]
+    - key:
+        files: [.pre-commit-config.yaml]
+        prefix: pre-commit
+      paths: [.pre-commit-cache]
+  script:
+    - uv lock --check
+    - uv sync --frozen
+    - uv run --frozen pre-commit run --all-files --show-diff-on-failure
+
+test:
+  stage: test
+  image: ghcr.io/astral-sh/uv:python$PYTHON_VERSION-bookworm
+  parallel:
+    matrix:
+      - PYTHON_VERSION: ["3.12", "3.13", "3.14"]
+  before_script:
+    # A virtual X server is needed to run the Tk GUI tests
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends xvfb xauth > /dev/null
+  script:
+    - uv sync --frozen
+    - xvfb-run -a uv run --frozen pytest --junitxml=report-$PYTHON_VERSION.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report-$PYTHON_VERSION.xml
+
+# Tests querying the live HFC web service: they may fail if the service is down.
+test-network:
+  stage: test
+  allow_failure: true
+  script:
+    - uv sync --frozen
+    - uv run --frozen pytest -m network --junitxml=report-network.xml
+  artifacts:
+    when: always
+    reports:
+      junit: report-network.xml
+
+build:
+  stage: build
+  needs: [test]
+  script:
+    - uv build
+  artifacts:
+    paths: [dist/]

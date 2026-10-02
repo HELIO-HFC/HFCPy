@@ -2,6 +2,25 @@ hfcViewer CHANGELOG
 -------------------
 
 
+Version 0.3.0
+=============
+* Rename the Python package to ``hfcpy`` (the viewer command is still ``hfcviewer``)
+* Package the viewer with a pyproject.toml (uv), with a ``hfcviewer`` command
+* Support Python 3.12, 3.13 and 3.14, update the dependencies
+* New HQI client in the ``hfcpy.api`` sub-package, usable on its own:
+  ``HQIClient`` wrapping all the HQI methods (``SQLSelect``, ``Query``,
+  ``TimeQuery``, ``getTableNames``, ``getTableFields``), helpers (``nearest``,
+  ``previous``, ``next``, ``features``, ``quicklook``), conditions built from
+  mappings, typed values, access to the VOTable document and to dictionaries,
+  pandas/astropy conversions, and explicit errors (``HQIError``)
+* Adapt the SQL queries to the PostgreSQL backend of the HFC
+* Fix the compatibility with recent numpy, scipy and matplotlib versions
+* Fix the data set given on the command line being ignored
+* Cache the feature data, and fix the colors by tracking
+* Add unit tests (pytest), ruff, mypy and pre-commit configurations
+* Add a GitLab CI pipeline
+* Distribute under the EUPL-1.2 licence
+
 Version 0.2
 ===========
 * Adapt for Python 3.X
@@ -11,6 +30,3 @@ Version 0.2
 Version 0.1
 ===========
 * First release
-
-
-
