@@ -1,0 +1,104 @@
+[project]
+name = "hfcpy"
+version = "0.3.0"
+description = "Python tools for the HELIO Heliophysics Feature Catalogue (HFC): HQI client and viewer"
+readme = "README.rst"
+license = "EUPL-1.2"
+license-files = ["LICENSE"]
+authors = [{ name = "Xavier Bonnin", email = "xavier.bonnin@obspm.fr" }]
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+dependencies = [
+    "matplotlib>=3.11",
+    "numpy>=2.5",
+    "pillow>=12.3",
+    "scipy>=1.18",
+    "suds>=1.2",
+    "truststore>=0.10.4",
+]
+
+[project.optional-dependencies]
+# Conversion of the query responses to astropy tables or pandas data frames
+astropy = ["astropy>=8.0"]
+pandas = ["pandas>=3.0"]
+
+[project.urls]
+Homepage = "http://voparis-helio.obspm.fr/hfc-gui/"
+
+[project.scripts]
+hfcviewer = "hfcpy.hfcviewer.viewer:main"
+
+[dependency-groups]
+dev = [
+    "astropy>=8.0",
+    "mypy>=2.4",
+    "pandas>=3.0",
+    "pandas-stubs>=3.0",
+    "pre-commit>=4.6",
+    "pytest>=9.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16",
+    "scipy-stubs>=1.16",
+]
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "PTH", # flake8-use-pathlib
+    "RUF", # ruff-specific rules
+]
+
+[tool.ruff.lint.pep8-naming]
+# SQL clause keywords (WHAT, FROM, WHERE, ...) are the web service parameter names.
+ignore-names = ["WHAT", "FROM", "WHERE", "ORDER_BY", "LIMIT"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+# The matplotlib Tk backend is not fully typed
+untyped_calls_exclude = ["matplotlib.backends"]
+
+[[tool.mypy.overrides]]
+module = ["suds", "suds.*", "astropy", "astropy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.backends.backend_tkagg"]
+implicit_reexport = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "-m", "not network"]
+markers = ["network: tests that query the live HFC web service (deselect with -m 'not network')"]
+
+[tool.coverage.run]
+source = ["hfcpy"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "if __name__ == .__main__.:"]

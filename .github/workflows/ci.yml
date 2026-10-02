@@ -1,0 +1,179 @@
+# GitHub Actions CI of hfcpy (equivalent to .gitlab-ci.yml).
+#
+# Workflows only run when they are triggered:
+#   - from the GitHub web interface (Actions > CI > Run workflow),
+#   - through the API (workflow_dispatch or repository_dispatch events),
+#   - when a tag is pushed (a release tag pushed on master is published on PyPI).
+
+name: CI
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+    types: [ci]
+  push:
+    tags: ["*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_LINK_MODE: copy
+  # Use the uv-managed Python builds (they include Tkinter, unlike the
+  # Python 3.12 of the Ubuntu runner)
+  UV_MANAGED_PYTHON: "1"
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    env:
+      # the uv-lock hook would try to update the lock file
+      SKIP: uv-lock
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: uv lock --check
+      - run: uv sync --frozen
+      - run: uv run --frozen pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+      # A virtual X server is needed to run the Tk GUI tests
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb > /dev/null
+      - run: uv sync --frozen
+      - run: >-
+          xvfb-run -a uv run --frozen pytest
+          --junitxml=report-${{ matrix.python-version }}.xml
+          --cov --cov-report=term --cov-report=xml
+      - name: Coverage summary
+        run: |
+          uv run --frozen coverage report --format=total > coverage-total.txt
+          echo "Coverage: $(cat coverage-total.txt)%" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-report-${{ matrix.python-version }}
+          path: |
+            report-${{ matrix.python-version }}.xml
+            coverage.xml
+            coverage-total.txt
+
+  # Tests querying the live HFC web service: they may fail if the service is down.
+  test-network:
+    needs: pre-commit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run --frozen pytest -m network --junitxml=report-network.xml
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-report-network
+          path: report-network.xml
+
+  # Publish the coverage badge (read by shields.io) on the "badges" branch,
+  # for the runs on the development branch (master only receives the releases).
+  coverage-badge:
+    needs: test
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: test-report-3.14
+      - name: Write the badge
+        run: |
+          python3 .github/scripts/coverage_badge.py "$(cat coverage-total.txt)" "$RUNNER_TEMP/coverage.json"
+      - name: Push the badge to the badges branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin badges > /dev/null; then
+            git fetch --depth 1 origin badges
+            git worktree add badges-branch FETCH_HEAD
+            git -C badges-branch switch -c badges
+          else
+            git worktree add --orphan -b badges badges-branch
+          fi
+          cp "$RUNNER_TEMP/coverage.json" badges-branch/coverage.json
+          cd badges-branch
+          git add coverage.json
+          if git diff --cached --quiet; then
+            echo "Coverage badge unchanged"
+          else
+            git commit -m "Update the coverage badge (${GITHUB_REF_NAME})"
+            git push origin badges
+          fi
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  # Publish the package on PyPI when a release tag (vX.Y.Z) is pushed on master.
+  # It uses PyPI trusted publishing: no token is stored, PyPI trusts this
+  # workflow (see the "Releases" section of the README for its configuration).
+  publish-pypi:
+    needs: [test, build]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/hfcpy/
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the full history is needed to check that the tag is on master
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.2.0
+      - name: Check the release
+        run: ci/check-release.sh "$GITHUB_REF_NAME" "$GITHUB_SHA"
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Publish on PyPI
+        run: >-
+          uv publish --trusted-publishing always
+          --check-url https://pypi.org/simple/ dist/*
