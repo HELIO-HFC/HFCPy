@@ -43,7 +43,15 @@ To install the ``hfcviewer`` command, run::
 To use the HQI client in your own project, add it as a dependency, optionally
 with the ``pandas`` and/or ``astropy`` extras::
 
-    uv add "hfcpy[pandas,astropy] @ git+https://github.com/HELIO-HFC/HFCPy.git"
+    uv add "hfcpy[pandas,astropy]"
+
+or, with pip::
+
+    pip install "hfcpy[pandas,astropy]"
+
+To use the development version, install it from the ``develop`` branch::
+
+    uv add "hfcpy @ git+https://github.com/HELIO-HFC/HFCPy.git@develop"
 
 To set up a development environment, run::
 
@@ -298,6 +306,44 @@ tested Python versions and the licence. The coverage badge is updated by the CI 
 Python versions of the badge must be the ones of the ``pyproject.toml``
 classifiers and of the CI matrices (this is checked by the tests). On GitLab,
 the pipeline and coverage badges can be added in *Settings > General > Badges*.
+
+
+RELEASES
+========
+
+The development is done on ``develop``; the ``master`` branch only receives the
+releases. To publish a new version of ``hfcpy`` on `PyPI <https://pypi.org/project/hfcpy/>`_:
+
+1. update the version (e.g. ``uv version --bump minor``) and the ``CHANGELOG.rst``
+   on ``develop``;
+2. merge ``develop`` into ``master``;
+3. tag the merge commit on ``master`` with the version, and push the tag::
+
+       git tag v0.3.0
+       git push origin v0.3.0
+
+The CI then runs the checks and the tests, builds the package and publishes it
+(``publish-pypi`` job). The publication is refused if the tag (``X.Y.Z`` or
+``vX.Y.Z``) does not match the version of the package, or if the tagged commit is
+not on ``master`` (see ``ci/check-release.sh``). The files already on PyPI are
+skipped, so the GitHub and GitLab pipelines can both run on the same tag.
+
+The publication uses the `trusted publishing
+<https://docs.pypi.org/trusted-publishers/>`_ of PyPI: no token is stored in the
+CI, PyPI trusts the CI pipelines declared for the project. This must be
+configured once on PyPI:
+
+- before the first release (the ``hfcpy`` project does not exist yet on PyPI), add
+  a *pending publisher* in *Your account > Publishing*, with the project name
+  ``hfcpy`` and, for GitHub: owner ``HELIO-HFC``, repository ``HFCPy``, workflow
+  ``ci.yml``, environment ``pypi``; the first release then creates the project;
+- for GitLab, add a publisher in the *Publishing* settings of the ``hfcpy``
+  project once it exists (or as the pending publisher, if the first release is
+  made from GitLab), with the GitLab namespace and project, the top-level
+  pipeline file ``.gitlab-ci.yml`` and the environment ``pypi``.
+
+On GitHub, protection rules (e.g. a required reviewer) can be added to the ``pypi``
+environment in *Settings > Environments*, to approve each publication.
 
 
 LICENSE

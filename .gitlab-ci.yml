@@ -3,7 +3,7 @@
 # Pipelines only run when they are triggered:
 #   - from the GitLab web interface (Build > Pipelines > Run pipeline),
 #   - through the API (POST /projects/:id/pipeline or a trigger token),
-#   - when a tag is pushed.
+#   - when a tag is pushed (a release tag pushed on master is published on PyPI).
 
 workflow:
   rules:
@@ -17,6 +17,7 @@ stages:
   - lint
   - test
   - build
+  - publish
 
 variables:
   UV_LINK_MODE: copy
@@ -97,3 +98,24 @@ build:
     - uv build
   artifacts:
     paths: [dist/]
+
+# Publish the package on PyPI when a release tag (vX.Y.Z) is pushed on master.
+# It uses PyPI trusted publishing: no token is stored, PyPI trusts this
+# pipeline (see the "Releases" section of the README for its configuration).
+publish-pypi:
+  stage: publish
+  needs: [build]
+  rules:
+    - if: $CI_COMMIT_TAG
+  variables:
+    # the full history is needed to check that the tag is on master
+    GIT_DEPTH: 0
+  id_tokens:
+    PYPI_ID_TOKEN:
+      aud: pypi
+  environment:
+    name: pypi
+    url: https://pypi.org/project/hfcpy/
+  script:
+    - sh ci/check-release.sh "$CI_COMMIT_TAG" "$CI_COMMIT_SHA"
+    - uv publish --trusted-publishing always --check-url https://pypi.org/simple/ dist/*
