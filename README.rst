@@ -1,6 +1,14 @@
 HFCPy
 -----
 
+.. image:: https://img.shields.io/badge/THIS%20REPOSITORY%20HAS%20MOVED%20TO-HELIO--HFC%2FPyHFC-red?style=for-the-badge
+   :target: https://github.com/HELIO-HFC/PyHFC
+   :alt: This repository has moved to HELIO-HFC/PyHFC
+
+**This repository is archived and no longer maintained. The project continues in
+the new repository** `HELIO-HFC/PyHFC <https://github.com/HELIO-HFC/PyHFC>`_\ **,
+where the package is now named** ``pyhfc``\ **.**
+
 .. image:: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml/badge.svg?branch=develop
    :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml?query=branch%3Adevelop
    :alt: CI status
