@@ -1,12 +1,12 @@
 HFCPy
 -----
 
-.. image:: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml/badge.svg
-   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml
+.. image:: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml/badge.svg?branch=develop
+   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml?query=branch%3Adevelop
    :alt: CI status
 
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/HELIO-HFC/HFCPy/badges/coverage.json
-   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml
+   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml?query=branch%3Adevelop
    :alt: Coverage
 
 .. image:: https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue
@@ -284,10 +284,13 @@ triggered through the API with a ``workflow_dispatch`` event, or a
 
     gh workflow run ci.yml --ref develop
 
+The development is done on the ``develop`` branch; the ``master`` branch only
+receives the tagged releases of the package.
+
 The badges at the top of this file give the status of the last GitHub Actions
-run on the default branch, the coverage of the tests, and the tested Python
-versions. The coverage badge is updated by the CI (runs on the default branch
-or on a tag), which pushes a ``coverage.json`` file to the ``badges`` branch. The
+run on the ``develop`` branch, the coverage of the tests on this branch, and the
+tested Python versions. The coverage badge is updated by the CI runs on
+``develop``, which push a ``coverage.json`` file to the ``badges`` branch. The
 Python versions of the badge must be the ones of the ``pyproject.toml``
 classifiers and of the CI matrices (this is checked by the tests). On GitLab,
 the pipeline and coverage badges can be added in *Settings > General > Badges*.
