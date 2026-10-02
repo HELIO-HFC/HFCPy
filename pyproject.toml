@@ -42,6 +42,7 @@ dev = [
     "pandas-stubs>=3.0",
     "pre-commit>=4.6",
     "pytest>=9.1",
+    "pytest-cov>=7.1.0",
     "ruff>=0.16",
     "scipy-stubs>=1.16",
 ]
@@ -92,3 +93,12 @@ implicit_reexport = true
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers", "-m", "not network"]
 markers = ["network: tests that query the live HFC web service (deselect with -m 'not network')"]
+
+[tool.coverage.run]
+source = ["hfcpy"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "if __name__ == .__main__.:"]

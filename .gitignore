@@ -16,3 +16,9 @@ dist/
 .uv-cache/
 .pre-commit-cache/
 report-*.xml
+
+# Coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/

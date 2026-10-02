@@ -1,6 +1,17 @@
 HFCPy
 -----
 
+.. image:: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml/badge.svg
+   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml
+   :alt: CI status
+
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/HELIO-HFC/HFCPy/badges/coverage.json
+   :target: https://github.com/HELIO-HFC/HFCPy/actions/workflows/ci.yml
+   :alt: Coverage
+
+.. image:: https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue
+   :alt: Python versions
+
 ``hfcpy`` is a Python package for the users of the HELIO Heliophysics Feature
 Catalogue (HFC). It provides:
 
@@ -264,9 +275,22 @@ Tests querying the live HFC web service are deselected by default, run them with
 
     uv run pytest -m network
 
-The GitLab CI pipeline (``.gitlab-ci.yml``) runs the checks and the tests on
-Python 3.12, 3.13 and 3.14. It is triggered from the web interface, through the
-API, or when a tag is pushed.
+The continuous integration runs the checks and the tests on Python 3.12, 3.13
+and 3.14, then builds the package. It is available for GitLab (``.gitlab-ci.yml``)
+and GitHub Actions (``.github/workflows/ci.yml``), and is triggered from the web
+interface, through the API, or when a tag is pushed. On GitHub, it can be
+triggered through the API with a ``workflow_dispatch`` event, or a
+``repository_dispatch`` event of type ``ci``::
+
+    gh workflow run ci.yml --ref develop
+
+The badges at the top of this file give the status of the last GitHub Actions
+run on the default branch, the coverage of the tests, and the tested Python
+versions. The coverage badge is updated by the CI (runs on the default branch
+or on a tag), which pushes a ``coverage.json`` file to the ``badges`` branch. The
+Python versions of the badge must be the ones of the ``pyproject.toml``
+classifiers and of the CI matrices (this is checked by the tests). On GitLab,
+the pipeline and coverage badges can be added in *Settings > General > Badges*.
 
 
 LICENSE
